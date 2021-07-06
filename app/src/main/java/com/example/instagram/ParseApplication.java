@@ -12,10 +12,9 @@ public class ParseApplication extends Application {
         super.onCreate();
 
         Parse.initialize(new Parse.Configuration.Builder(this)
-                .applicationId("PYFROCn15mGqHRreU9NkLUKukYnjRpS6PMfg4mlQ")
-                .clientKey("0HGx2zbey3T3EtnsfgqbGG6F64nj53UOZuOqYfso")
-                .server("https://parseapi.back4app.com")
-                .build()
-        );
+                .applicationId(getString(R.string.back4app_app_id))
+                .clientKey(getString(R.string.back4app_client_key))
+                .server(getString(R.string.back4app_server_url))
+                .build());
     }
 }
