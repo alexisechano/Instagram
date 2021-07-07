@@ -3,14 +3,19 @@ package com.example.instagram;
 import android.app.Application;
 
 import com.parse.Parse;
+import com.parse.ParseObject;
 
 public class ParseApplication extends Application {
 
-    // Initializes Parse SDK as soon as the application is created
+    // initializes Parse SDK as soon as the application is created
     @Override
     public void onCreate() {
         super.onCreate();
 
+        // register Post class
+        ParseObject.registerSubclass(Post.class);
+
+        // use keys to initialize Parse here
         Parse.initialize(new Parse.Configuration.Builder(this)
                 .applicationId(getString(R.string.back4app_app_id))
                 .clientKey(getString(R.string.back4app_client_key))

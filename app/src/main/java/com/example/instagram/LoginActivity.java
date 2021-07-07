@@ -15,13 +15,13 @@ import com.parse.ParseException;
 import com.parse.ParseUser;
 
 public class LoginActivity extends AppCompatActivity {
-    // view elements
-    EditText etUsername;
-    EditText etPassword;
-    Button btnLogin;
+    // view element variables
+    private EditText etUsername;
+    private EditText etPassword;
+    private Button btnLogin;
 
-    // set TAG
-    public static final String TAG = "LoginActivity";
+    // constants
+    private static final String TAG = "LoginActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,7 +46,7 @@ public class LoginActivity extends AppCompatActivity {
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.i(TAG,"Clicked button!");
+                Log.i(TAG,"Clicked");
 
                 // get the text fields from the login layout
                 String username = etUsername.getText().toString();
@@ -65,12 +65,12 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void done(ParseUser user, ParseException e) {
                  if(e != null){
-                     Log.e(TAG, "Unable to login", e);
+                     Log.e(TAG, "Unable to login with Parse", e);
                      Toast.makeText(LoginActivity.this, "Error with username/password", Toast.LENGTH_SHORT).show();
                      return;
                  }
                  // navigate to main activity if success
-                 Log.i(TAG, "Success! Going to main...");
+                 Log.i(TAG, "Success! Going to main activity");
                  Toast.makeText(LoginActivity.this, "Logging in...", Toast.LENGTH_SHORT).show();
                  openMainActivity();
             }
