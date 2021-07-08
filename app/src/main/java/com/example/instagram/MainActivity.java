@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnLogout; // temp button for logout
     private Button btnTakePic;
     private Button btnSubmit;
+    private Button btnFeed;
     private EditText etDescription;
     private ImageView ivPostImage;
     private File photoFile;
@@ -51,10 +52,6 @@ public class MainActivity extends AppCompatActivity {
 
         // match variables to layout id and set click listeners
         setUpView();
-
-        // get posts from database
-        //queryPosts();
-
     }
 
     private void setUpView() {
@@ -72,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
         // other elements in layout
         btnTakePic = findViewById(R.id.btnTakePic);
         btnSubmit = findViewById(R.id.btnSubmit);
+        btnFeed = findViewById(R.id.btnFeed);
         etDescription = findViewById(R.id.etDescription);
         ivPostImage = findViewById(R.id.ivPostImage);
 
@@ -102,6 +100,16 @@ public class MainActivity extends AppCompatActivity {
                 // get current user and use info to save post to database
                 ParseUser currUser = ParseUser.getCurrentUser();
                 savePost(imgDescription, currUser, photoFile);
+            }
+        });
+
+        // set up feed navigator
+        btnFeed.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i(TAG, "Navigating to Feed");
+                Intent i = new Intent(MainActivity.this, FeedActivity.class);
+                startActivity(i);
             }
         });
     }
@@ -177,28 +185,6 @@ public class MainActivity extends AppCompatActivity {
                 // clear out current data to show user it was successful
                 etDescription.setText("");
                 ivPostImage.setImageResource(0);
-            }
-        });
-    }
-
-    private void queryPosts() {
-        ParseQuery<Post> query = ParseQuery.getQuery(Post.class);
-
-        // get all posts
-        query.include(Post.KEY_USER);
-        query.findInBackground(new FindCallback<Post>() {
-            @Override
-            public void done(List<Post> posts, ParseException e) {
-                // check if null
-                if(e != null){
-                    Log.e(TAG, "Issue with getting posts", e);
-                    return;
-                }
-
-                // iterate through all of the posts
-                for(Post post: posts){
-                    Log.i(TAG, "Current post descrip: " + post.getDescription() + ", Username: " + post.getUser().getUsername());
-                }
             }
         });
     }

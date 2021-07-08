@@ -45,4 +45,12 @@
         android:layout_alignParentBottom="true"
         />
 
+    <Button
+        android:id="@+id/btnFeed"
+        android:text="Go To Feed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        />
+
 </LinearLayout>
