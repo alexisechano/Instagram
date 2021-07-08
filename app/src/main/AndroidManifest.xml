@@ -15,8 +15,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Instagram"
         android:usesCleartextTraffic="true">
-        <activity android:name=".DetailActivity"></activity>
-        <activity android:name=".FeedActivity" />
+        <activity android:name=".PostActivity"></activity>
+        <activity android:name=".DetailActivity" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

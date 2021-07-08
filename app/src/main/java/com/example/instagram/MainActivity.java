@@ -1,8 +1,12 @@
 package com.example.instagram;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -12,175 +16,160 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.example.instagram.adapters.PostsAdapter;
 import com.example.instagram.models.Post;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.parse.FindCallback;
 import com.parse.ParseException;
 import com.parse.ParseFile;
+import com.parse.ParseQuery;
 import com.parse.ParseUser;
 import com.parse.SaveCallback;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    // view element variables
-    private Button btnLogout; // temp button for logout
-    private Button btnTakePic;
-    private Button btnSubmit;
-    private Button btnFeed;
-    private EditText etDescription;
-    private ImageView ivPostImage;
-    private File photoFile;
-
-    // other instance variables for File
-    private String photoFileName = "photo.jpg";
-
     // constants
     private static final String TAG = "MainActivity";
-    private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 42;
+
+    // view element variables
+    private RecyclerView rvPosts;
+    private SwipeRefreshLayout swipeContainer;
+
+    protected PostsAdapter adapter;
+    protected List<Post> postList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // match variables to layout id and set click listeners
-        setUpView();
+        // set bottom navigation
+        BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.action_home:
+                        break;
+                    case R.id.action_post:
+                        Intent i_post = new Intent(MainActivity.this, PostActivity.class);
+                        startActivity(i_post);
+                        break;
+                    case R.id.action_profile:
+                        ParseUser.logOut();
+                        Log.i(TAG, "Logged out user");
+                        Intent i = new Intent(MainActivity.this, LoginActivity.class);
+                        startActivity(i);
+                        break;
+                }
+                return true;
+            }
+        });
+
+        // Lookup the swipe container view
+        swipeContainer = (SwipeRefreshLayout) findViewById(R.id.swipeContainer);
+
+        // Setup refresh listener which triggers new data loading
+        swipeContainer.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                fetchTimelineAsync();
+            }
+        });
+
+        // Configure the refreshing colors
+        swipeContainer.setColorSchemeResources(android.R.color.holo_blue_bright,
+                android.R.color.holo_green_light,
+                android.R.color.holo_orange_light,
+                android.R.color.holo_red_light);
+
+        // find Recycler View
+        rvPosts = findViewById(R.id.rvPosts);
+
+        // initialize the array that will hold posts and create a PostsAdapter
+        postList = new ArrayList<>();
+        adapter = new PostsAdapter(this, postList);
+
+        // set the adapter on the recycler view
+        rvPosts.setAdapter(adapter);
+
+        // set the layout manager on the recycler view
+        rvPosts.setLayoutManager(new LinearLayoutManager(this));
+
+        // query posts from Parse database
+        queryPosts();
     }
 
-    private void setUpView() {
-        // basic logout feature
-        btnLogout = findViewById(R.id.btnLogout);
-        btnLogout.setOnClickListener(new View.OnClickListener() {
+    private ParseQuery<Post> setQuery(){
+        // specify what type of data we want to query - Post.class
+        ParseQuery<Post> query = ParseQuery.getQuery(Post.class);
+
+        // include data referred by user key
+        query.include(Post.KEY_USER);
+
+        // limit query to latest 20 items
+        query.setLimit(20);
+
+        // order posts by creation date (newest first)
+        query.addDescendingOrder("createdAt");
+
+        return query;
+    }
+
+    private void fetchTimelineAsync() {
+        // Remember to CLEAR OUT old items before appending in the new ones
+        adapter.clear();
+
+        // set new list and query
+        ParseQuery<Post> query = setQuery();
+
+        query.findInBackground(new FindCallback<Post>() {
             @Override
-            public void onClick(View v) {
-                ParseUser.logOut();
-                Log.i(TAG, "Logged out user");
-                Intent i = new Intent(MainActivity.this, LoginActivity.class);
-                startActivity(i);
-            }
-        });
-
-        // other elements in layout
-        btnTakePic = findViewById(R.id.btnTakePic);
-        btnSubmit = findViewById(R.id.btnSubmit);
-        btnFeed = findViewById(R.id.btnFeed);
-        etDescription = findViewById(R.id.etDescription);
-        ivPostImage = findViewById(R.id.ivPostImage);
-
-        // set up listener to open camera
-        btnTakePic.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                launchCamera();
-            }
-        });
-
-        // set up btn listener to save and upload post
-        btnSubmit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String imgDescription = etDescription.getText().toString();
-
-                if(imgDescription.isEmpty()){
-                    Toast.makeText(MainActivity.this, "Description cannot be empty!", Toast.LENGTH_SHORT).show();
+            public void done(List<Post> objects, ParseException e) {
+                // check for errors
+                if (e != null) {
+                    Log.e(TAG, "Issue with getting posts", e);
                     return;
                 }
-                // error check
-                if(photoFile == null || ivPostImage.getDrawable() == null){
-                    Toast.makeText(MainActivity.this, "There is no image!", Toast.LENGTH_SHORT).show();
+
+                // update recycler view with new objects
+                adapter.addAll(objects);
+                swipeContainer.setRefreshing(false);
+            }
+        });
+    }
+
+    private void queryPosts() {
+        ParseQuery<Post> query = setQuery();
+
+        // start an asynchronous call for posts
+        query.findInBackground(new FindCallback<Post>() {
+            @Override
+            public void done(List<Post> posts, ParseException e) {
+                // check for errors
+                if (e != null) {
+                    Log.e(TAG, "Issue with getting posts", e);
                     return;
                 }
 
-                // get current user and use info to save post to database
-                ParseUser currUser = ParseUser.getCurrentUser();
-                savePost(imgDescription, currUser, photoFile);
-            }
-        });
-
-        // set up feed navigator
-        btnFeed.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.i(TAG, "Navigating to Feed");
-                Intent i = new Intent(MainActivity.this, FeedActivity.class);
-                startActivity(i);
-            }
-        });
-    }
-
-    private void launchCamera() {
-        // create Intent to take a picture and return control to the calling application
-        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
-        // create a File reference for future access
-        photoFile = getPhotoFileUri(photoFileName);
-
-        // wrap File object into a content provider
-        Uri fileProvider = FileProvider.getUriForFile(MainActivity.this, "com.codepath.fileprovider", photoFile);
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, fileProvider);
-
-        if (intent.resolveActivity(getPackageManager()) != null) {
-            // start the image capture intent to take photo
-            startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
-            if (resultCode == RESULT_OK) {
-                // use camera on disk to load into image view
-                Bitmap takenImage = BitmapFactory.decodeFile(photoFile.getAbsolutePath());
-
-                ivPostImage.setImageBitmap(takenImage);
-            } else {
-                Toast.makeText(this, "Picture wasn't taken!", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    public File getPhotoFileUri(String fileName) {
-        // get safe storage directory for photos
-        File mediaStorageDir = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), TAG);
-
-        // create the storage directory if it does not exist
-        if (!mediaStorageDir.exists() && !mediaStorageDir.mkdirs()){
-            Log.d(TAG, "failed to create directory");
-        }
-
-        // return the file target for the photo based on filename
-        return new File(mediaStorageDir.getPath() + File.separator + fileName);
-    }
-
-    private void savePost(String description, ParseUser currUser, File photoFile) {
-        Post post = new Post();
-
-        // set post fields
-        post.setDescription(description);
-        post.setImage(new ParseFile(photoFile));
-        post.setUser(currUser);
-
-        // save to the database
-        post.saveInBackground(new SaveCallback() {
-            @Override
-            public void done(ParseException e) {
-                if(e != null){
-                    Log.e(TAG, "Error while saving", e);
-                    Toast.makeText(MainActivity.this, "Cannot save post!", Toast.LENGTH_SHORT).show();
+                // for debugging purposes let's print every post description to logcat
+                for (Post post : posts) {
+                    Log.i(TAG, "Post: " + post.getDescription() + ", username: " + post.getUser().getUsername());
                 }
 
-                // if no error, let log know
-                Log.i(TAG, "Saved post successfully");
-
-                // clear out current data to show user it was successful
-                etDescription.setText("");
-                ivPostImage.setImageResource(0);
+                // save received posts to list and notify adapter of new data
+                postList.addAll(posts);
+                adapter.notifyDataSetChanged();
             }
         });
     }
