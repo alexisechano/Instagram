@@ -7,17 +7,13 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageView;
 
+import com.example.instagram.adapters.PostsAdapter;
+import com.example.instagram.models.Post;
 import com.parse.FindCallback;
 import com.parse.ParseException;
 import com.parse.ParseQuery;
 
-import org.json.JSONArray;
-
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,16 +35,15 @@ public class FeedActivity extends AppCompatActivity {
 
         // Lookup the swipe container view
         swipeContainer = (SwipeRefreshLayout) findViewById(R.id.swipeContainer);
+
         // Setup refresh listener which triggers new data loading
         swipeContainer.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                // Your code to refresh the list here.
-                // Make sure you call swipeContainer.setRefreshing(false)
-                // once the network request has completed successfully.
-                fetchTimelineAsync(0);
+                fetchTimelineAsync();
             }
         });
+
         // Configure the refreshing colors
         swipeContainer.setColorSchemeResources(android.R.color.holo_blue_bright,
                 android.R.color.holo_green_light,
@@ -68,34 +63,8 @@ public class FeedActivity extends AppCompatActivity {
         // set the layout manager on the recycler view
         rvPosts.setLayoutManager(new LinearLayoutManager(this));
 
-        // query posts from INSTAGRAM
+        // query posts from Parse database
         queryPosts();
-    }
-
-    private void fetchTimelineAsync(int i) {
-        // Remember to CLEAR OUT old items before appending in the new ones
-        adapter.clear();
-
-        // set new list and query
-        ParseQuery<Post> query = setQuery();
-
-        query.findInBackground(new FindCallback<Post>() {
-            @Override
-            public void done(List<Post> objects, ParseException e) {
-                // check for errors
-                if (e != null) {
-                    Log.e(TAG, "Issue with getting posts", e);
-                    return;
-                }
-                // ...the data has come back, add new items to your adapter...
-                adapter.addAll(objects);
-
-                // Now we call setRefreshing(false) to signal refresh has finished
-                swipeContainer.setRefreshing(false);
-            }
-        });
-
-
     }
 
     private ParseQuery<Post> setQuery(){
@@ -112,6 +81,29 @@ public class FeedActivity extends AppCompatActivity {
         query.addDescendingOrder("createdAt");
 
         return query;
+    }
+
+    private void fetchTimelineAsync() {
+        // Remember to CLEAR OUT old items before appending in the new ones
+        adapter.clear();
+
+        // set new list and query
+        ParseQuery<Post> query = setQuery();
+
+        query.findInBackground(new FindCallback<Post>() {
+            @Override
+            public void done(List<Post> objects, ParseException e) {
+                // check for errors
+                if (e != null) {
+                    Log.e(TAG, "Issue with getting posts", e);
+                    return;
+                }
+
+                // update recycler view with new objects
+                adapter.addAll(objects);
+                swipeContainer.setRefreshing(false);
+            }
+        });
     }
 
     private void queryPosts() {

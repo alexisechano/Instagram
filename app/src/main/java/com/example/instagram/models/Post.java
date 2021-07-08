@@ -1,4 +1,4 @@
-package com.example.instagram;
+package com.example.instagram.models;
 
 import android.os.Parcelable;
 import android.util.Log;

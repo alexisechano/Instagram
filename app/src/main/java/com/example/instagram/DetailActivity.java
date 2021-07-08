@@ -3,16 +3,14 @@ package com.example.instagram;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.example.instagram.models.Post;
 import com.parse.ParseFile;
 
 import org.parceler.Parcels;
-
-import java.util.Date;
 
 public class DetailActivity extends AppCompatActivity {
     // view elements
@@ -30,7 +28,7 @@ public class DetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_detail);
 
         // set the view items
-        setViewElems();
+        setUpView();
 
         // get tweet from intent
         post = (Post) Parcels.unwrap(getIntent().getParcelableExtra(Post.class.getSimpleName()));
@@ -39,7 +37,7 @@ public class DetailActivity extends AppCompatActivity {
         bind(post);
     }
 
-    private void setViewElems() {
+    private void setUpView() {
         tvDescription = findViewById(R.id.tvDescription);
         tvUsername = findViewById(R.id.tvUsername);
         tvTime = findViewById(R.id.tvTime);

@@ -1,4 +1,4 @@
-package com.example.instagram;
+package com.example.instagram.adapters;
 
 import android.content.Context;
 import android.content.Intent;
@@ -12,6 +12,9 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.example.instagram.DetailActivity;
+import com.example.instagram.models.Post;
+import com.example.instagram.R;
 import com.parse.ParseFile;
 
 import org.parceler.Parcels;
@@ -46,13 +49,11 @@ public class PostsAdapter extends RecyclerView.Adapter<PostsAdapter.ViewHolder> 
         return posts.size();
     }
 
-    // Clean all elements of the recycler
     public void clear() {
         posts.clear();
         notifyDataSetChanged();
     }
 
-    // Add a list of items -- change to type used
     public void addAll(List<Post> list) {
         posts.addAll(list);
         notifyDataSetChanged();
@@ -66,31 +67,32 @@ public class PostsAdapter extends RecyclerView.Adapter<PostsAdapter.ViewHolder> 
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            setViewElems();
+            setUpView();
 
             // add this as click listener
             itemView.setOnClickListener(this);
         }
 
-        private void setViewElems() {
+        private void setUpView() {
             // find them in the layout
             tvDescription = itemView.findViewById(R.id.tvDescription);
             tvUsername = itemView.findViewById(R.id.tvUsername);
             ivImage = itemView.findViewById(R.id.ivImage);
         }
 
-        // when the user clicks on a row, show Tweet details
+        // when the user clicks on a post, show details
         @Override
         public void onClick(View v) {
-            // gets item position
             int position = getAdapterPosition();
-            // make sure the position is valid, i.e. actually exists in the view
             if (position != RecyclerView.NO_POSITION) {
                 Post post = posts.get(position);
+
                 // create intent for the new activity
                 Intent intent = new Intent(context, DetailActivity.class);
+
                 // serialize the post using parceler, use its short name as a key
                 intent.putExtra(Post.class.getSimpleName(), Parcels.wrap(post));
+
                 // show the activity
                 context.startActivity(intent);
             }

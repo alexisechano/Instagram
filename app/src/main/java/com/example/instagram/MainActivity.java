@@ -18,15 +18,13 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.parse.FindCallback;
+import com.example.instagram.models.Post;
 import com.parse.ParseException;
 import com.parse.ParseFile;
-import com.parse.ParseQuery;
 import com.parse.ParseUser;
 import com.parse.SaveCallback;
 
 import java.io.File;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     // view element variables
@@ -38,12 +36,12 @@ public class MainActivity extends AppCompatActivity {
     private ImageView ivPostImage;
     private File photoFile;
 
+    // other instance variables for File
+    private String photoFileName = "photo.jpg";
+
     // constants
     private static final String TAG = "MainActivity";
     private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 42;
-
-    // other instance variables
-    private String photoFileName = "photo.jpg";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,17 +116,15 @@ public class MainActivity extends AppCompatActivity {
         // create Intent to take a picture and return control to the calling application
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
-        // Create a File reference for future access
+        // create a File reference for future access
         photoFile = getPhotoFileUri(photoFileName);
 
         // wrap File object into a content provider
         Uri fileProvider = FileProvider.getUriForFile(MainActivity.this, "com.codepath.fileprovider", photoFile);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, fileProvider);
 
-        // If you call startActivityForResult() using an intent that no app can handle, your app will crash.
-        // So as long as the result is not null, it's safe to use the intent.
         if (intent.resolveActivity(getPackageManager()) != null) {
-            // Start the image capture intent to take photo
+            // start the image capture intent to take photo
             startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
         }
     }
@@ -140,25 +136,24 @@ public class MainActivity extends AppCompatActivity {
             if (resultCode == RESULT_OK) {
                 // use camera on disk to load into image view
                 Bitmap takenImage = BitmapFactory.decodeFile(photoFile.getAbsolutePath());
+
                 ivPostImage.setImageBitmap(takenImage);
-            } else { // Result was a failure
+            } else {
                 Toast.makeText(this, "Picture wasn't taken!", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
     public File getPhotoFileUri(String fileName) {
-        // Get safe storage directory for photos
-        // Use `getExternalFilesDir` on Context to access package-specific directories.
-        // This way, we don't need to request external read/write runtime permissions.
+        // get safe storage directory for photos
         File mediaStorageDir = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), TAG);
 
-        // Create the storage directory if it does not exist
+        // create the storage directory if it does not exist
         if (!mediaStorageDir.exists() && !mediaStorageDir.mkdirs()){
             Log.d(TAG, "failed to create directory");
         }
 
-        // Return the file target for the photo based on filename
+        // return the file target for the photo based on filename
         return new File(mediaStorageDir.getPath() + File.separator + fileName);
     }
 
@@ -179,8 +174,8 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "Cannot save post!", Toast.LENGTH_SHORT).show();
                 }
 
-                // if no error
-                Log.i(TAG, "Saved post successfully!");
+                // if no error, let log know
+                Log.i(TAG, "Saved post successfully");
 
                 // clear out current data to show user it was successful
                 etDescription.setText("");
