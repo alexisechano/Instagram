@@ -60,7 +60,8 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 ParseUser.logOut();
                 Log.i(TAG, "Logged out user");
-                finish();
+                Intent i = new Intent(MainActivity.this, LoginActivity.class);
+                startActivity(i);
             }
         });
 
