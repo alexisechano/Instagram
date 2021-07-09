@@ -24,7 +24,6 @@ import java.util.List;
 
 
 public class FeedFragment extends Fragment {
-
     // constants
     private static final String TAG = "FeedFragment";
 
